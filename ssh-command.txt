@@ -1,0 +1,1 @@
+tailscale ssh root@rhdh-kube-ssh-test -R 0.0.0.0:5033:localhost:5033
