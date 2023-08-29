@@ -242,9 +242,9 @@ async fn run_reconciliation(
                 spec: Some(ServiceSpec {
                     ports: Some(
                         port_map
-                            .iter()
-                            .map(|(service_port, proxy_port)| ServicePort {
-                                port: *service_port,
+                            .values()
+                            .map(|proxy_port| ServicePort {
+                                port: *proxy_port,
                                 target_port: Some(IntOrString::Int(*proxy_port)),
                                 ..Default::default()
                             })
@@ -282,7 +282,16 @@ async fn run_reconciliation(
                     ..Default::default()
                 },
                 spec: Some(ServiceSpec {
-                    ports: test_proxy_service.spec.and_then(|s| s.ports).clone(),
+                    ports: Some(
+                        port_map
+                            .iter()
+                            .map(|(service_port, proxy_port)| ServicePort {
+                                port: *service_port,
+                                target_port: Some(IntOrString::Int(*proxy_port)),
+                                ..Default::default()
+                            })
+                            .collect(),
+                    ),
                     selector: Some(tsproxy_labels.clone()),
                     ..Default::default()
                 }),
