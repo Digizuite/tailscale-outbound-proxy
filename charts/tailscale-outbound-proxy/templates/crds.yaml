@@ -14,7 +14,7 @@ spec:
   versions:
   - additionalPrinterColumns:
     - description: Hostname of the tailscale machine to ssh to
-      jsonPath: .status.tailscale_hostname
+      jsonPath: .status.tailscaleHostname
       name: Tailscale Hostname
       type: string
     name: v1alpha1
@@ -50,17 +50,17 @@ spec:
                 description: How to map the original ports through the proxy
                 items:
                   properties:
-                    original_port:
+                    originalPort:
                       description: If the service that is being replaced has multiple ports, then this is used to map between the ports. Not needed if there is only 1 port on the replaced service.
                       format: int32
                       nullable: true
                       type: integer
-                    proxy_port:
+                    proxyPort:
                       description: The port that should be invoked on the proxy
                       format: int32
                       type: integer
                   required:
-                  - proxy_port
+                  - proxyPort
                   type: object
                 type: array
               proxyStateSecretName:
@@ -91,11 +91,11 @@ spec:
           status:
             nullable: true
             properties:
-              replaced_deployment:
+              replacedDeployment:
                 description: The name of the deployment that was scaled down to replace the service
                 nullable: true
                 type: string
-              tailscale_hostname:
+              tailscaleHostname:
                 description: The hostname of the tailscale machine to ssh to
                 nullable: true
                 type: string

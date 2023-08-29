@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
     plural = "replacedservices",
     derive = "PartialEq",
     status = "ReplacedServiceResourceStatus",
-    printcolumn = r#"{"name":"Tailscale Hostname", "type":"string", "description":"Hostname of the tailscale machine to ssh to", "jsonPath":".status.tailscale_hostname"}"#,
+    printcolumn = r#"{"name":"Tailscale Hostname", "type":"string", "description":"Hostname of the tailscale machine to ssh to", "jsonPath":".status.tailscaleHostname"}"#,
     namespaced
 )]
 #[serde(rename_all = "camelCase")]
@@ -57,6 +57,7 @@ pub enum TestProtocol {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct ServicePortMapping {
     /// If the service that is being replaced has multiple ports, then
     /// this is used to map between the ports. Not needed if there is only
@@ -67,6 +68,7 @@ pub struct ServicePortMapping {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema, Default)]
+#[serde(rename_all = "camelCase")]
 pub struct ReplacedServiceResourceStatus {
     /// The hostname of the tailscale machine to ssh to
     pub tailscale_hostname: Option<String>,

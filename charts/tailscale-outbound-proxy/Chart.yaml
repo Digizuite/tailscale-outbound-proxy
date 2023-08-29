@@ -9,5 +9,5 @@ kubeVersion: ">= 1.25.0-0"
 name: tailscale-outbound-proxy-operator
 sources:
  - https://github.com/digizuite/tailscale-outbound-proxy
-version: 0.0.3
+version: 0.0.4
 icon: https://github.com/digizuite/tailscale-outbound-proxy/raw/master/tailscale-logo-black.png
