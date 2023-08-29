@@ -13,6 +13,7 @@ use std::collections::BTreeMap;
     derive = "PartialEq",
     status = "ReplacedServiceResourceStatus",
     printcolumn = r#"{"name":"Tailscale Hostname", "type":"string", "description":"Hostname of the tailscale machine to ssh to", "jsonPath":".status.tailscaleHostname"}"#,
+    printcolumn = r#"{"name":"Ready", "type":"boolean", "description":"If the proxy is ready and handling requests", "jsonPath":".status.active"}"#,
     namespaced
 )]
 #[serde(rename_all = "camelCase")]
@@ -76,4 +77,7 @@ pub struct ReplacedServiceResourceStatus {
     pub replaced_deployment: Option<String>,
     /// Warnings that occured during last reconcile.
     pub warning: Option<String>,
+
+    /// If this is actually working yet.
+    pub active: Option<bool>,
 }

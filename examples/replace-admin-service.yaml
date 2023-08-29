@@ -126,7 +126,7 @@ metadata:
 spec:
   serviceToReplace: nginx
   ports:
-    - proxy_port: 5033
+    - proxyPort: 5033
   ignoreCertificateErrors: true
   healthEndpoint: "/health"
   healthTestProtocol: Https

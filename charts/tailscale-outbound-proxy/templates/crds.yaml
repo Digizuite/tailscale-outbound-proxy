@@ -17,6 +17,10 @@ spec:
       jsonPath: .status.tailscaleHostname
       name: Tailscale Hostname
       type: string
+    - description: If the proxy is ready and handling requests
+      jsonPath: .status.active
+      name: Ready
+      type: boolean
     name: v1alpha1
     schema:
       openAPIV3Schema:
@@ -91,6 +95,10 @@ spec:
           status:
             nullable: true
             properties:
+              active:
+                description: If this is actually working yet.
+                nullable: true
+                type: boolean
               replacedDeployment:
                 description: The name of the deployment that was scaled down to replace the service
                 nullable: true

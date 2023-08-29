@@ -25,13 +25,50 @@ pub(crate) async fn reconcile_replaced_service(
     resource: Arc<ReplacedService>,
     context: Arc<ContextData>,
 ) -> Result<Action, Error> {
-    Ok(run_reconciliation(resource, context).await?)
+    match run_reconciliation(resource.clone(), context.clone()).await {
+        Ok((action, ready)) => {
+            set_active_state(resource, context, ready).await?;
+            Ok(action)
+        }
+        Err(e) => {
+            set_active_state(resource, context, false).await?;
+            Err(e.into())
+        }
+    }
+}
+
+async fn set_active_state(
+    resource: Arc<ReplacedService>,
+    context: Arc<ContextData>,
+    state: bool,
+) -> Result<()> {
+    if let Some(ns) = resource.namespace() {
+        let api: Api<ReplacedService> = Api::namespaced(context.kubernetes_client.clone(), &ns);
+
+        if let Some(mut latest) = api.get_opt(&resource.name_any()).await? {
+            let status = latest.status_mut();
+            if let Some(status) = status {
+                status.active = Some(state);
+            } else {
+                *status = Some(ReplacedServiceResourceStatus {
+                    active: Some(state),
+                    ..Default::default()
+                });
+            }
+
+            let patch = Patch::Merge(&latest);
+            api.patch_status(&resource.name_any(), &PatchParams::default(), &patch)
+                .await?;
+        }
+    }
+
+    Ok(())
 }
 
 async fn run_reconciliation(
     resource: Arc<ReplacedService>,
     context: Arc<ContextData>,
-) -> Result<Action> {
+) -> Result<(Action, bool)> {
     let name = resource.name_any();
 
     let namespace = resource.namespace().ok_or(anyhow!(
@@ -44,7 +81,7 @@ async fn run_reconciliation(
     let resource = resource_api.get_opt(&name).await?;
 
     if resource.is_none() {
-        return Ok(Action::await_change());
+        return Ok((Action::await_change(), false));
     }
 
     let resource = resource.unwrap();
@@ -93,7 +130,7 @@ async fn run_reconciliation(
         remove_finalizer::<ReplacedService>(context.kubernetes_client.clone(), &name, &namespace)
             .await?;
 
-        return Ok(Action::await_change());
+        return Ok((Action::await_change(), false));
     }
 
     let resource = ensure_finalizer(resource, context.kubernetes_client.clone()).await?;
@@ -428,7 +465,7 @@ enum Either<Left, Right> {
 async fn find_deployment(
     context: &Arc<ContextData>,
     resource: &ReplacedService,
-) -> Result<Either<String, Action>> {
+) -> Result<Either<String, (Action, bool)>> {
     let resource = resource.clone();
     let namespace = resource.namespace().unwrap();
 
@@ -644,7 +681,7 @@ async fn generate_port_map(
     service_ports: Vec<i32>,
     resource: ReplacedService,
     resource_api: Api<ReplacedService>,
-) -> Result<HashMap<i32, i32>, Result<Action>> {
+) -> Result<HashMap<i32, i32>, Result<(Action, bool)>> {
     let mut port_map = HashMap::<i32, i32>::new();
 
     if service_ports.len() > 1 {
@@ -690,7 +727,7 @@ async fn add_warning_and_requeue(
     resource: ReplacedService,
     api_client: Api<ReplacedService>,
     message: &str,
-) -> Result<Action> {
+) -> Result<(Action, bool)> {
     if let Some(mut latest) = api_client.get_opt(&resource.name_any()).await? {
         let status = latest.status_mut();
 
@@ -712,13 +749,13 @@ async fn add_warning_and_requeue(
             .await?;
     }
 
-    Ok(Action::requeue(Duration::from_secs(30)))
+    Ok((Action::requeue(Duration::from_secs(30)), false))
 }
 
 async fn remove_warning_and_requeue(
     resource: ReplacedService,
     api_client: Api<ReplacedService>,
-) -> Result<Action> {
+) -> Result<(Action, bool)> {
     if let Some(mut latest) = api_client.get_opt(&resource.name_any()).await? {
         let status = latest.status_mut();
 
@@ -735,7 +772,7 @@ async fn remove_warning_and_requeue(
         }
     }
 
-    Ok(Action::requeue(Duration::from_secs(30)))
+    Ok((Action::requeue(Duration::from_secs(30)), true))
 }
 
 async fn do_server_side_apply<TResource>(
