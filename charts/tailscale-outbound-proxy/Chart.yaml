@@ -9,5 +9,5 @@ kubeVersion: ">= 1.25.0-0"
 name: tailscale-outbound-proxy-operator
 sources:
  - https://github.com/digizuite/sftpgo-k8s-operator
-version: 0.0.1
+version: 0.0.2
 icon: https://github.com/digizuite/sftpgo-k8s-operator/raw/master/tailscale-logo-black.png
