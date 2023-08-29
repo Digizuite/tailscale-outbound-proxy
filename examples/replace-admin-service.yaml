@@ -1,0 +1,137 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: digizuite-25dcebfd96154cf78a9275e9c866d7d4
+data:
+  nginx.conf: '
+events {
+}
+http {
+   server {
+       listen 80;
+       location / {
+           return 200 "Hello world!";
+       }
+   }
+}
+'
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+  namespace: digizuite-25dcebfd96154cf78a9275e9c866d7d4
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - image: nginx:latest
+          name: nginx
+          ports:
+            - containerPort: 80
+              name: web
+          volumeMounts:
+            - name: config-vol
+              mountPath: /etc/nginx/
+      volumes:
+        - name: config-vol
+          configMap:
+            name: nginx-config
+            items:
+              - key: nginx.conf
+                path: nginx.conf
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  namespace: digizuite-25dcebfd96154cf78a9275e9c866d7d4
+spec:
+  ports:
+    - port: 5033
+      targetPort: 80
+  selector:
+    app: nginx
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ubuntu
+  namespace: digizuite-25dcebfd96154cf78a9275e9c866d7d4
+spec:
+  selector:
+    matchLabels:
+      app: ubuntu
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ubuntu
+    spec:
+      containers:
+        - image: ubuntu:latest
+          name: ubuntu
+          command:
+            - "/bin/sh"
+          args:
+            - "-c"
+            - "sleep 3600"
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: digizuitecore-ts-proxy
+  namespace: digizuite-25dcebfd96154cf78a9275e9c866d7d4
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: digizuitecore-ts-proxy
+  namespace: digizuite-25dcebfd96154cf78a9275e9c866d7d4
+rules:
+  - apiGroups: [ "" ]
+    resources: [ "secrets" ]
+    verbs: [ "*" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: digizuitecore-ts-proxy
+  namespace: digizuite-25dcebfd96154cf78a9275e9c866d7d4
+subjects:
+  - kind: ServiceAccount
+    name: digizuitecore-ts-proxy
+    namespace: digizuite-25dcebfd96154cf78a9275e9c866d7d4
+roleRef:
+  kind: Role
+  name: digizuitecore-ts-proxy
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: tsproxy.digizuite.com/v1alpha1
+kind: ReplacedService
+metadata:
+  name: administration-replaced-service
+  namespace: digizuite-25dcebfd96154cf78a9275e9c866d7d4
+spec:
+  serviceToReplace: nginx
+  ports:
+    - proxy_port: 5033
+  ignoreCertificateErrors: true
+  healthEndpoint: "/health"
+  healthTestProtocol: Https
+  tailscaleHostName: "rhdh-outbound-proxy-test"
+  tailscaleTags:
+    - "tag:k8s"
+  serviceAccount: digizuitecore-ts-proxy
+  proxyStateSecretName: digizuitecore-ts-proxy-state

@@ -1,0 +1,13 @@
+apiVersion: v2
+appVersion: 2.5.0
+description: An operator for managing reverse proxies for outbound connectivity using tailscale
+home: https://github.com/digizuite/tailscale-outbound-proxy
+keywords:
+  - operator
+  - tailscale
+kubeVersion: ">= 1.25.0-0"
+name: tailscale-outbound-proxy-operator
+sources:
+ - https://github.com/digizuite/sftpgo-k8s-operator
+version: 0.0.1
+icon: https://github.com/digizuite/sftpgo-k8s-operator/raw/master/tailscale-logo-black.png

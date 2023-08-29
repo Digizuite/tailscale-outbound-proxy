@@ -1,0 +1,13 @@
+operator:
+  enable: true
+  resources:
+    limits:
+      cpu: 100m
+      memory: 200Mi
+    requests:
+      cpu: 100m
+      memory: 200Mi
+  nodeSelector: {}
+tailscale:
+  client_id: ""
+  client_secret: ""
