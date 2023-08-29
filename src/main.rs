@@ -8,13 +8,15 @@ extern crate pretty_env_logger;
 extern crate log;
 
 use crate::replace_service_reconciler::reconcile_replaced_service;
-use crate::replaced_service::ReplacedService;
+use crate::replaced_service::{ReplacedService, ReplacedServiceResourceStatus};
 use crate::tailscale_api::{new_tailscale_api, TailscaleApi};
 use clap::Parser;
 use futures::stream::StreamExt;
 use k8s_openapi::api::apps::v1::Deployment;
 use k8s_openapi::api::core::v1::Service;
+use kube::api::Patch;
 use kube::client::Client;
+use kube::core::object::HasStatus;
 use kube::{Api, CustomResourceExt, Resource};
 use kube_runtime::controller::Action;
 use kube_runtime::watcher::Config;
@@ -85,7 +87,41 @@ async fn main() -> anyhow::Result<()> {
         .for_each(|res| async move {
             match res {
                 Ok(o) => debug!("reconciled: {:?}", o),
-                Err(e) => error!("reconcile failed: {:?}", e),
+                Err(e) => {
+                    error!("reconcile failed: {:?}", e);
+
+                    let warning_message = format!("{:?}", e);
+
+                    if let kube_runtime::controller::Error::ReconcilerFailed(_, o) = e {
+
+                        if let Some(ns) = o.namespace {
+                            if let Ok(kubernetes_client) = Client::try_default().await {
+                                let api: Api<ReplacedService> = Api::namespaced(kubernetes_client.clone(), &ns);
+                                if let Ok(Some(mut latest)) = api.get_opt(&o.name).await {
+                                    let status = latest.status_mut();
+
+                                    if let Some(status) = status {
+                                        status.warning = Some(warning_message);
+                                    } else {
+                                        *status = Some(ReplacedServiceResourceStatus {
+                                            warning: Some(warning_message),
+                                            ..Default::default()
+                                        })
+                                    }
+
+                                    if let Err(inner_error) = api.patch_status(&o.name, &Default::default(), &Patch::Merge(status)).await {
+                                        error!("Failed to patch status of failed replaced service: {:?}", inner_error);
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+
+
+
+
+                },
             }
         })
         .await;
