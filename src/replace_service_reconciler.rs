@@ -687,48 +687,52 @@ async fn generate_port_map(
 }
 
 async fn add_warning_and_requeue(
-    mut resource: ReplacedService,
+    resource: ReplacedService,
     api_client: Api<ReplacedService>,
     message: &str,
 ) -> Result<Action> {
-    let status = resource.status_mut();
+    if let Some(mut latest) = api_client.get_opt(&resource.name_any()).await? {
+        let status = latest.status_mut();
 
-    if let Some(ref mut s) = status {
-        s.warning = Some(message.to_string());
-    } else {
-        *status = Some(ReplacedServiceResourceStatus {
-            warning: Some(message.to_string()),
-            ..Default::default()
-        });
+        if let Some(ref mut s) = status {
+            s.warning = Some(message.to_string());
+        } else {
+            *status = Some(ReplacedServiceResourceStatus {
+                warning: Some(message.to_string()),
+                ..Default::default()
+            });
+        }
+
+        api_client
+            .patch_status(
+                &latest.name_any(),
+                &Default::default(),
+                &Patch::Merge(latest),
+            )
+            .await?;
     }
-
-    api_client
-        .patch_status(
-            &resource.name_any(),
-            &Default::default(),
-            &Patch::Merge(resource),
-        )
-        .await?;
 
     Ok(Action::requeue(Duration::from_secs(30)))
 }
 
 async fn remove_warning_and_requeue(
-    mut resource: ReplacedService,
+    resource: ReplacedService,
     api_client: Api<ReplacedService>,
 ) -> Result<Action> {
-    let status = resource.status_mut();
+    if let Some(mut latest) = api_client.get_opt(&resource.name_any()).await? {
+        let status = latest.status_mut();
 
-    if let Some(ref mut s) = status {
-        s.warning = None;
+        if let Some(ref mut s) = status {
+            s.warning = None;
 
-        api_client
-            .patch_status(
-                &resource.name_any(),
-                &Default::default(),
-                &Patch::Merge(resource),
-            )
-            .await?;
+            api_client
+                .patch_status(
+                    &latest.name_any(),
+                    &Default::default(),
+                    &Patch::Merge(latest),
+                )
+                .await?;
+        }
     }
 
     Ok(Action::requeue(Duration::from_secs(30)))
