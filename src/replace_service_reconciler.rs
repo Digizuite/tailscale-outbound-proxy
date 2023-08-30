@@ -157,7 +157,7 @@ async fn run_reconciliation(
         let is_replaced_service = service.owner_references().iter().any(|r| r.uid == uid);
 
         if is_replaced_service {
-            info!(
+            debug!(
                 "Service {} is currently replaced service",
                 service_to_replace_name
             );
@@ -166,7 +166,7 @@ async fn run_reconciliation(
                 .await
             {
                 Ok(_) => {
-                    info!("Proxy service still works, nothing to do");
+                    debug!("Proxy service still works, nothing to do");
                 }
                 Err(err) => {
                     info!(
@@ -230,7 +230,7 @@ async fn run_reconciliation(
                 Err(value) => return value,
             };
 
-            info!("Port map: {:?}", port_map);
+            debug!("Port map: {:?}", port_map);
 
             let test_proxy_service = Service {
                 metadata: ObjectMeta {
@@ -266,7 +266,7 @@ async fn run_reconciliation(
                     info!("Proxy service works, updating service pointer");
                 }
                 Err(err) => {
-                    info!("Proxy service does not work, leaving service pointer as is");
+                    debug!("Proxy service does not work, leaving service pointer as is");
                     let warning = format!(
                         "Proxy service does not work, leaving service pointer as is: {err}"
                     );
@@ -322,7 +322,7 @@ async fn ensure_tailscale_proxy(
     tsproxy_labels: &BTreeMap<String, String>,
     owner_reference: &OwnerReference,
 ) -> Result<()> {
-    info!("Ensuring tailscale proxy");
+    debug!("Ensuring tailscale proxy");
     let namespace = resource.namespace().unwrap();
 
     let tailscale_proxy_secret_state_secret_name = &resource.spec.proxy_state_secret_name;
@@ -588,7 +588,7 @@ async fn test_if_proxy_service_works(
     context: Arc<ContextData>,
     test_proxy_service_name: &str,
 ) -> Result<()> {
-    info!("Testing is proxy service for {test_proxy_service_name} works");
+    debug!("Testing is proxy service for {test_proxy_service_name} works");
     let namespace = resource.namespace().unwrap();
 
     let proto = match resource
@@ -610,7 +610,7 @@ async fn test_if_proxy_service_works(
         let test_url =
             format!("{proto}://{test_proxy_service_name}.{namespace}.svc.cluster.local:{port}/{health_path}");
 
-        info!("Testing url {test_url}");
+        debug!("Testing url {test_url}");
 
         let http_client = match resource.spec.ignore_certificate_errors.unwrap_or_default() {
             true => &context.danger_ignore_certs_http_client,
@@ -674,7 +674,7 @@ async fn restore_proxied_service(
     namespace: &str,
     client: Client,
 ) -> Result<()> {
-    info!("Restoring proxies service {service_to_replace_name} in namespace {namespace}");
+    debug!("Restoring proxies service {service_to_replace_name} in namespace {namespace}");
     let backup_service_name = format!("{}-proxy-backup", service_to_replace_name);
 
     let original: Service = Api::namespaced(client.clone(), namespace)
@@ -703,7 +703,7 @@ async fn generate_port_map(
                 .map(|p| p.proxy_port);
 
             if let Some(proxy_port) = proxy_port {
-                info!(
+                debug!(
                     "Found proxy port {} for service port {}",
                     proxy_port, service_port
                 );
@@ -723,7 +723,7 @@ async fn generate_port_map(
             0 => return Err(add_warning_and_requeue(resource, resource_api, "Service has no ports defined").await),
             1 => {
                 let proxy_port = resource.spec.ports[0].proxy_port;
-                info!("Found proxy port {} for service port {}", proxy_port, service_port);
+                debug!("Found proxy port {} for service port {}", proxy_port, service_port);
                 port_map.insert(service_port, proxy_port);
             },
             _ => return Err(add_warning_and_requeue(resource, resource_api, "ReplacedService has multiple ports, while the service itself only has 1 port defined").await)
@@ -758,7 +758,7 @@ async fn add_warning_and_requeue(
             .await?;
     }
 
-    Ok((Action::requeue(Duration::from_secs(30)), false))
+    Ok((Action::requeue(Duration::from_secs(15)), false))
 }
 
 async fn remove_warning_and_requeue(
@@ -793,7 +793,7 @@ where
         Resource<Scope = NamespaceResourceScope> + Clone + DeserializeOwned + Serialize + Debug,
     <TResource as Resource>::DynamicType: Default,
 {
-    info!(
+    debug!(
         "Doing server side apply of resource type {}",
         TResource::kind(&Default::default())
     );
@@ -808,7 +808,7 @@ where
         .patch(&name, &serverside, &Patch::Apply(resource))
         .await?;
 
-    info!(
+    debug!(
         "Completed server side apply of resource type {}",
         TResource::kind(&Default::default())
     );
@@ -827,7 +827,7 @@ where
         Resource<Scope = NamespaceResourceScope> + Clone + DeserializeOwned + Serialize + Debug,
     <TResource as Resource>::DynamicType: Default,
 {
-    info!(
+    debug!(
         "Creating resource {name} with owner reference of type {}",
         TResource::kind(&Default::default())
     );
@@ -860,7 +860,7 @@ async fn change_deployment_scale(
     name: &str,
     replicas: i32,
 ) -> Result<()> {
-    info!("Changing deployment scale of {name} in {namespace} to {replicas}");
+    debug!("Changing deployment scale of {name} in {namespace} to {replicas}");
 
     let api: Api<Deployment> = Api::namespaced(client.clone(), namespace);
 
