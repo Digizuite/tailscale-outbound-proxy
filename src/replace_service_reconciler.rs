@@ -399,7 +399,7 @@ async fn ensure_tailscale_proxy(
                         }]),
                         containers: vec![Container {
                             name: "tailscale".to_string(),
-                            image: Some("ghcr.io/digizuite/tailscale-fix:sha-a82e762".to_string()),
+                            image: Some("ghcr.io/digizuite/tailscale-fix:master".to_string()),
                             image_pull_policy: Some("Always".to_string()),
                             security_context: Some(SecurityContext {
                                 capabilities: Some(Capabilities {
