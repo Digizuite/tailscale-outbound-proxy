@@ -48,7 +48,7 @@ impl TailscaleApi {
             capabilities: CreateTokenRequestCapabilities {
                 devices: CreateTokenRequestCapabilitiesDevices {
                     create: CreateTokenRequestCapabilitiesDevicesCreate {
-                        ephemeral: false,
+                        ephemeral: true,
                         reusable: false,
                         preauthorized: true,
                         tags,
