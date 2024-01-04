@@ -46,6 +46,9 @@ struct Args {
 async fn main() -> anyhow::Result<()> {
     pretty_env_logger::init_timed();
 
+    info!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
+    info!("git hash: {}", env!("VERGEN_GIT_DESCRIBE"));
+
     let args = Args::parse();
 
     if args.generate_crds {

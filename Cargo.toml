@@ -2,6 +2,7 @@
 name = "tailscale-outbound-proxy"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -23,4 +24,8 @@ reqwest = { version = "0.11", default-features = false, features = ["json", "rus
 clap = { version = "4.4.0", features = ["env", "derive"] }
 oauth2 = "4.4.1"
 url = "2.4.0"
+
+
+[build-dependencies]
+vergen = { version = "8.0.0", features = ["build", "git", "gitcl"] }
 
