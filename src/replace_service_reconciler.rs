@@ -1,5 +1,5 @@
 use crate::finalizers::{ensure_finalizer, remove_finalizer};
-use crate::replaced_service::{ReplacedService, ReplacedServiceResourceStatus, TestProtocol};
+use crate::replaced_service::{ReplacedService, ReplacedServiceResourceStatus, TestProtocol, ScaledObject};
 use crate::{ContextData, Error};
 use anyhow::{anyhow, Result};
 use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec, DeploymentStrategy, ReplicaSet};
@@ -10,7 +10,7 @@ use k8s_openapi::api::core::v1::{
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta, OwnerReference};
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 use k8s_openapi::NamespaceResourceScope;
-use kube::api::{Patch, PatchParams};
+use kube::api::{Patch, PatchParams, DynamicObject, ApiResource};
 use kube::core::object::HasStatus;
 use kube::{Api, Client, Resource, ResourceExt};
 use kube_runtime::controller::Action;
@@ -20,6 +20,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::fmt::Debug;
 use std::sync::Arc;
 use std::time::Duration;
+use serde_json::json;
 
 pub(crate) async fn reconcile_replaced_service(
     resource: Arc<ReplacedService>,
@@ -80,13 +81,15 @@ async fn run_reconciliation(
 
     let resource = resource_api.get_opt(&name).await?;
 
+    
     if resource.is_none() {
         return Ok((Action::await_change(), false));
     }
-
+    
     let resource = resource.unwrap();
-
+    
     let service_to_replace_name = resource.spec.service_to_replace.clone();
+    
     let test_proxy_service_name = format!("{}-proxy", service_to_replace_name);
     let backup_service_name = format!("{}-proxy-backup", service_to_replace_name);
 
@@ -858,19 +861,56 @@ async fn change_deployment_scale(
     client: Client,
     namespace: &str,
     name: &str,
+    keda_scaler_name: &Option<String>,
     replicas: i32,
 ) -> Result<()> {
     debug!("Changing deployment scale of {name} in {namespace} to {replicas}");
 
     let api: Api<Deployment> = Api::namespaced(client.clone(), namespace);
-
+    
     if let Some(mut deployment) = api.get_opt(name).await? {
         if let Some(ref mut spec) = deployment.spec {
             spec.replicas = Some(replicas);
         }
-
+        
         do_server_side_apply(client, deployment).await?;
     }
-
+    
     Ok(())
+}
+
+async fn change_keda_replicas(
+    client: Client,
+    namespace: &str,
+    name: &str,
+    replicas: i32,
+) -> Result<()> {
+    let api_resource = ApiResource {
+        api_version: String::from("v1alpha1"),
+        group: String::from("keda.sh"),
+        kind: String::from("ScaledObject"),
+        version: String::from("v1"),
+        plural: String::from("scaledobjects")
+    };
+    
+    let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), namespace, &api_resource);
+    
+    let replicas = format!("{}", replicas);
+
+    let scaled_object_patch = json!({
+        "spec": {
+            "triggers": [
+                {
+                    "metadata": {
+                        "desiredReplicas": replicas
+                    }
+                }
+            ]
+        }
+    });
+
+    let patch = Patch::Merge(&scaled_object_patch);
+    api.patch(name, &PatchParams::default(), &patch).await?;
+    Ok(())
+
 }
