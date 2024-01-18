@@ -868,6 +868,8 @@ async fn change_deployment_scale(
 
     let api: Api<Deployment> = Api::namespaced(client.clone(), namespace);
     
+
+
     if let Some(mut deployment) = api.get_opt(name).await? {
         if let Some(ref mut spec) = deployment.spec {
             spec.replicas = Some(replicas);
@@ -893,6 +895,7 @@ async fn change_keda_replicas(
         plural: String::from("scaledobjects")
     };
     
+    debug!("Changing deployment cron-deployment-scale of {name} in {namespace} to {replicas}");
     let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), namespace, &api_resource);
     
     let replicas = format!("{}", replicas);
