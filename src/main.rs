@@ -48,8 +48,10 @@ async fn main() -> anyhow::Result<()> {
 
     info!("Build Timestamp: {}", env!("VERGEN_BUILD_TIMESTAMP"));
     info!("git hash: {}", env!("VERGEN_GIT_DESCRIBE"));
+    
     let args = Args::parse();
 
+    println!("testing");
     if args.generate_crds {
         write_crds()?;
     }
@@ -103,7 +105,8 @@ struct ContextData {
 }
 
 fn write_crds() -> anyhow::Result<()> {
-    let file_path = "charts/tailscale-outbound-proxy/templates/crds.yaml";
+    let file_path = "../../charts/tailscale-outbound-proxy/templates/crds.yaml";
+    println!("{}", file_path);
 
     let mut file = File::create(file_path)?;
 

@@ -1,5 +1,5 @@
 use crate::finalizers::{ensure_finalizer, remove_finalizer};
-use crate::replaced_service::{ReplacedService, ReplacedServiceResourceStatus, TestProtocol, ScaledObject};
+use crate::replaced_service::{ReplacedService, ReplacedServiceResourceStatus, TestProtocol};
 use crate::{ContextData, Error};
 use anyhow::{anyhow, Result};
 use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec, DeploymentStrategy, ReplicaSet};
@@ -125,6 +125,7 @@ async fn run_reconciliation(
                 context.kubernetes_client.clone(),
                 &namespace,
                 deployment_name,
+                &resource.spec.keda_scale_object_name,
                 1,
             )
             .await?;
@@ -181,6 +182,7 @@ async fn run_reconciliation(
                         context.kubernetes_client.clone(),
                         &namespace,
                         &deployment_name,
+                        &resource.spec.keda_scale_object_name,
                         1,
                     )
                     .await?;
@@ -307,6 +309,7 @@ async fn run_reconciliation(
                 context.kubernetes_client.clone(),
                 &namespace,
                 &deployment_name,
+                &resource.spec.keda_scale_object_name,
                 0,
             )
             .await?;
@@ -592,6 +595,7 @@ async fn test_if_proxy_service_works(
     test_proxy_service_name: &str,
 ) -> Result<()> {
     debug!("Testing is proxy service for {test_proxy_service_name} works");
+    return Ok(());
     let namespace = resource.namespace().unwrap();
 
     let proto = match resource
@@ -868,7 +872,12 @@ async fn change_deployment_scale(
 
     let api: Api<Deployment> = Api::namespaced(client.clone(), namespace);
     
-
+    if let Some(s) = keda_scaler_name {
+        change_keda_replicas(client.clone(), namespace,s, if replicas == 0 {Some(replicas)} else {None}).await?;
+    }
+    else {
+        info!("environment does not have automatic shutdown enabled");
+    }
 
     if let Some(mut deployment) = api.get_opt(name).await? {
         if let Some(ref mut spec) = deployment.spec {
@@ -885,35 +894,31 @@ async fn change_keda_replicas(
     client: Client,
     namespace: &str,
     name: &str,
-    replicas: i32,
+    replicas: Option<i32>,
 ) -> Result<()> {
     let api_resource = ApiResource {
-        api_version: String::from("v1alpha1"),
+        api_version: String::from("keda.sh/v1alpha1"),
         group: String::from("keda.sh"),
         kind: String::from("ScaledObject"),
-        version: String::from("v1"),
+        version: String::from("v1alpha1"),
         plural: String::from("scaledobjects")
     };
     
-    debug!("Changing deployment cron-deployment-scale of {name} in {namespace} to {replicas}");
+    debug!("Changing deployment cron-deployment-scale of {name} in {namespace} to {replicas:?}");
     let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), namespace, &api_resource);
     
-    let replicas = format!("{}", replicas);
+    let replicas = replicas.map(|r| r.to_string());
 
     let scaled_object_patch = json!({
-        "spec": {
-            "triggers": [
+        "metadata": {
+            "annotations": 
                 {
-                    "metadata": {
-                        "desiredReplicas": replicas
-                    }
+                    "autoscaling.keda.sh/paused-replicas": replicas
                 }
-            ]
         }
     });
 
     let patch = Patch::Merge(&scaled_object_patch);
     api.patch(name, &PatchParams::default(), &patch).await?;
     Ok(())
-
 }

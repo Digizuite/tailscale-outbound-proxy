@@ -44,6 +44,10 @@ spec:
                 description: If certificate errors should be ignored when testing a https endpoint
                 nullable: true
                 type: boolean
+              kedaScaleObjectName:
+                description: The name of a keda scaled object that might prevent downscaling of a deployment
+                nullable: true
+                type: string
               nodeSelector:
                 additionalProperties:
                   type: string

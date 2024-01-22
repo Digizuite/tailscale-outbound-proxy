@@ -49,7 +49,7 @@ pub struct ReplacedServiceSpec {
     /// to create this secret yourself.
     pub proxy_state_secret_name: String,
 
-    /// TODO
+    /// The name of a keda scaled object that might prevent downscaling of a deployment
     pub keda_scale_object_name: Option<String>,
 }
 
@@ -83,34 +83,4 @@ pub struct ReplacedServiceResourceStatus {
 
     /// If this is actually working yet.
     pub active: Option<bool>,
-}
-
-#[derive(CustomResource, Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema, Default)]
-#[serde(rename_all = "camelCase")]
-#[kube(
-    group = "keda.sh",
-    version = "v1alpha1",
-    kind = "ScaledObject",
-    namespaced
-)]
-pub struct ScaledObjectStruct {
-    pub spec: ScaledObjectSpec
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct ScaledObjectSpec {
-    pub triggers: ScaledObjectSpecTriggers
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct ScaledObjectSpecTriggers {
-    pub metadata: Vec<ScaledObjectSpecTriggersMetadata>
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct ScaledObjectSpecTriggersMetadata {
-    pub desired_replicas: Option<String>
 }
