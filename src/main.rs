@@ -105,7 +105,7 @@ struct ContextData {
 }
 
 fn write_crds() -> anyhow::Result<()> {
-    let file_path = "../../charts/tailscale-outbound-proxy/templates/crds.yaml";
+    let file_path = "charts/tailscale-outbound-proxy/templates/crds.yaml";
     println!("{}", file_path);
 
     let mut file = File::create(file_path)?;
