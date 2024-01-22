@@ -595,7 +595,6 @@ async fn test_if_proxy_service_works(
     test_proxy_service_name: &str,
 ) -> Result<()> {
     debug!("Testing is proxy service for {test_proxy_service_name} works");
-    return Ok(());
     let namespace = resource.namespace().unwrap();
 
     let proto = match resource
