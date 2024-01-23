@@ -3,6 +3,24 @@ entries:
   tailscale-outbound-proxy-operator:
   - apiVersion: v2
     appVersion: 2.5.0
+    created: "2024-01-23T09:57:44.06658517Z"
+    description: An operator for managing reverse proxies for outbound connectivity
+      using tailscale
+    digest: b50840d441e33eb8ffe8fc888b2ca7a2f4a977c91d1f34b6c83640dfc3ae94d6
+    home: https://github.com/digizuite/tailscale-outbound-proxy
+    icon: https://github.com/digizuite/tailscale-outbound-proxy/raw/master/tailscale-logo-black.png
+    keywords:
+    - operator
+    - tailscale
+    kubeVersion: '>= 1.25.0-0'
+    name: tailscale-outbound-proxy-operator
+    sources:
+    - https://github.com/digizuite/tailscale-outbound-proxy
+    urls:
+    - https://github.com/Digizuite/tailscale-outbound-proxy/releases/download/tailscale-outbound-proxy-operator-0.0.6/tailscale-outbound-proxy-operator-0.0.6.tgz
+    version: 0.0.6
+  - apiVersion: v2
+    appVersion: 2.5.0
     created: "2023-08-29T13:23:19.151578481Z"
     description: An operator for managing reverse proxies for outbound connectivity
       using tailscale
@@ -73,4 +91,4 @@ entries:
     urls:
     - https://github.com/Digizuite/tailscale-outbound-proxy/releases/download/tailscale-outbound-proxy-operator-0.0.2/tailscale-outbound-proxy-operator-0.0.2.tgz
     version: 0.0.2
-generated: "2023-08-29T13:23:19.151600981Z"
+generated: "2024-01-23T09:57:44.066613102Z"
