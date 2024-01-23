@@ -48,6 +48,9 @@ pub struct ReplacedServiceSpec {
     /// The secret to use for storing tailscales state. You do not have
     /// to create this secret yourself.
     pub proxy_state_secret_name: String,
+
+    /// The name of a keda scaled object that might prevent downscaling of a deployment
+    pub keda_scale_object_name: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema, Default)]
