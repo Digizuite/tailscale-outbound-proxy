@@ -875,15 +875,14 @@ async fn change_deployment_scale(
         change_keda_replicas(client.clone(), namespace,s, if replicas == 0 {Some(replicas)} else {None}).await?;
     }
     else {
-        info!("environment does not have automatic shutdown enabled");
-    }
-
-    if let Some(mut deployment) = api.get_opt(name).await? {
-        if let Some(ref mut spec) = deployment.spec {
-            spec.replicas = Some(replicas);
+        info!("environment {name} does not have automatic shutdown enabled");
+        if let Some(mut deployment) = api.get_opt(name).await? {
+            if let Some(ref mut spec) = deployment.spec {
+                spec.replicas = Some(replicas);
+            }
+            
+            do_server_side_apply(client, deployment).await?;
         }
-        
-        do_server_side_apply(client, deployment).await?;
     }
     
     Ok(())
