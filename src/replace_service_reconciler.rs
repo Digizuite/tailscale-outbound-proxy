@@ -10,17 +10,17 @@ use k8s_openapi::api::core::v1::{
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta, OwnerReference};
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 use k8s_openapi::NamespaceResourceScope;
-use kube::api::{Patch, PatchParams, DynamicObject, ApiResource};
+use kube::api::{ApiResource, DynamicObject, Patch, PatchParams};
 use kube::core::object::HasStatus;
 use kube::{Api, Client, Resource, ResourceExt};
 use kube_runtime::controller::Action;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
+use serde_json::json;
 use std::collections::{BTreeMap, HashMap};
 use std::fmt::Debug;
 use std::sync::Arc;
 use std::time::Duration;
-use serde_json::json;
 
 pub(crate) async fn reconcile_replaced_service(
     resource: Arc<ReplacedService>,
@@ -81,15 +81,14 @@ async fn run_reconciliation(
 
     let resource = resource_api.get_opt(&name).await?;
 
-    
     if resource.is_none() {
         return Ok((Action::await_change(), false));
     }
-    
+
     let resource = resource.unwrap();
-    
+
     let service_to_replace_name = resource.spec.service_to_replace.clone();
-    
+
     let test_proxy_service_name = format!("{}-proxy", service_to_replace_name);
     let backup_service_name = format!("{}-proxy-backup", service_to_replace_name);
 
@@ -870,21 +869,26 @@ async fn change_deployment_scale(
     debug!("Changing deployment scale of {name} in {namespace} to {replicas}");
 
     let api: Api<Deployment> = Api::namespaced(client.clone(), namespace);
-    
+
     if let Some(s) = keda_scaler_name {
-        change_keda_replicas(client.clone(), namespace,s, if replicas == 0 {Some(replicas)} else {None}).await?;
-    }
-    else {
-        info!("environment {name} does not have automatic shutdown enabled");
+        change_keda_replicas(
+            client.clone(),
+            namespace,
+            s,
+            if replicas == 0 { Some(replicas) } else { None },
+        )
+        .await?;
+    } else {
+        info!("deployment {name} is not configured with keda it seems");
         if let Some(mut deployment) = api.get_opt(name).await? {
             if let Some(ref mut spec) = deployment.spec {
                 spec.replicas = Some(replicas);
             }
-            
+
             do_server_side_apply(client, deployment).await?;
         }
     }
-    
+
     Ok(())
 }
 
@@ -899,17 +903,17 @@ async fn change_keda_replicas(
         group: String::from("keda.sh"),
         kind: String::from("ScaledObject"),
         version: String::from("v1alpha1"),
-        plural: String::from("scaledobjects")
+        plural: String::from("scaledobjects"),
     };
-    
+
     debug!("Changing deployment cron-deployment-scale of {name} in {namespace} to {replicas:?}");
     let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), namespace, &api_resource);
-    
+
     let replicas = replicas.map(|r| r.to_string());
 
     let scaled_object_patch = json!({
         "metadata": {
-            "annotations": 
+            "annotations":
                 {
                     "autoscaling.keda.sh/paused-replicas": replicas
                 }
