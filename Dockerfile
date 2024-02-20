@@ -11,7 +11,7 @@ RUN rustup target add x86_64-unknown-linux-musl
 # If the Cargo.toml and Cargo.lock files have not changed,
 # we can use the docker build cache and skip this slow step.
 RUN mkdir -p ./src/ && echo 'fn main(){println!("NOT COMPILED CORRECTLY");}' > ./src/main.rs
-COPY Cargo.lock Cargo.toml ./
+COPY Cargo.lock Cargo.toml build.rs ./
 RUN cargo build --target x86_64-unknown-linux-musl --release
 
 # Copy the source and build the application.
