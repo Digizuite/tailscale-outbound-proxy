@@ -94,6 +94,18 @@ rules:
       - get
       - update
       - patch
+  - apiGroups:
+      - keda.sh
+    resources:
+      - scaledobjects
+    verbs:
+      - create
+      - get
+      - list
+      - update
+      - watch
+      - patch
+      - delete
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
