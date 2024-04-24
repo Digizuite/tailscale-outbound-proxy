@@ -27,9 +27,3 @@ url = "2.5"
 
 [build-dependencies]
 vergen = { version = "8", features = ["build", "git", "gitcl"] }
-
-
-
-[profile.release]
-debug = "full"
-#split-debuginfo = "off"
