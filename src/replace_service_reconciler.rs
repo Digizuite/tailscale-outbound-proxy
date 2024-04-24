@@ -241,6 +241,7 @@ async fn run_reconciliation(
                     name: Some(test_proxy_service_name.clone()),
                     namespace: Some(namespace.clone()),
                     owner_references: Some(vec![owner_reference.clone()]),
+                    labels: Some(tsproxy_labels.clone()),
                     ..Default::default()
                 },
                 spec: Some(ServiceSpec {
@@ -260,7 +261,7 @@ async fn run_reconciliation(
                 ..Default::default()
             };
 
-            let test_proxy_service =
+            let _test_proxy_service =
                 do_server_side_apply(context.kubernetes_client.clone(), test_proxy_service).await?;
 
             match test_if_proxy_service_works(&resource, context.clone(), &test_proxy_service_name)
@@ -283,6 +284,7 @@ async fn run_reconciliation(
                     name: Some(service_to_replace_name.clone()),
                     namespace: Some(namespace.clone()),
                     owner_references: Some(vec![owner_reference.clone()]),
+                    labels: Some(tsproxy_labels.clone()),
                     ..Default::default()
                 },
                 spec: Some(ServiceSpec {

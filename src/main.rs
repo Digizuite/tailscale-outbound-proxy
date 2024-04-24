@@ -7,6 +7,7 @@ extern crate pretty_env_logger;
 #[macro_use]
 extern crate log;
 
+
 use crate::replace_service_reconciler::reconcile_replaced_service;
 use crate::replaced_service::ReplacedService;
 use crate::tailscale_api::{new_tailscale_api, TailscaleApi};
@@ -17,14 +18,15 @@ use k8s_openapi::api::core::v1::Service;
 use kube::client::Client;
 use kube::{Api, CustomResourceExt, Resource};
 use kube_runtime::controller::Action;
-use kube_runtime::watcher::Config;
-use kube_runtime::Controller;
+use kube_runtime::watcher::{Config, InitialListStrategy};
+use kube_runtime::{Controller, metadata_watcher, WatchStreamExt};
 use serde::de::DeserializeOwned;
 use std::fmt::Debug;
 use std::fs::File;
 use std::io::Write;
 use std::sync::Arc;
 use std::time::Duration;
+
 
 #[derive(Parser, Debug)]
 #[command(long_about = None)]
@@ -40,6 +42,9 @@ struct Args {
     /// The client secret of the Tailscale OAuth client
     #[arg(long, env = "TAILSCALE_CLIENT_SECRET")]
     tailscale_client_secret: String,
+
+    #[arg(long)]
+    label_selector: Option<String>,
 }
 
 #[tokio::main]
@@ -81,9 +86,23 @@ async fn main() -> anyhow::Result<()> {
         tailscale_api_client: tailscale_api,
     });
 
-    Controller::new(replaced_services_api.clone(), Config::default())
-        .owns(deployments_api, Config::default())
-        .owns(services_api, Config::default())
+    let cfg = Config {
+        initial_list_strategy: InitialListStrategy::ListWatch,
+        ..Config::default()
+    };
+
+    let owned_deployments = metadata_watcher(deployments_api, Config {
+        label_selector: Some("app=tailscale-outbound-proxy".to_string()),
+        ..cfg.clone()
+    }).default_backoff().applied_objects();
+    let owned_services = metadata_watcher(services_api, Config {
+        label_selector: Some("app=tailscale-outbound-proxy".to_string()),
+        ..cfg.clone()
+    }).default_backoff().applied_objects();
+
+    Controller::new(replaced_services_api.clone(), cfg.clone())
+        .owns_stream(owned_deployments)
+        .owns_stream(owned_services)
         .run(reconcile_replaced_service, error_policy, context)
         .for_each(|res| async move {
             match res {
