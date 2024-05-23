@@ -732,7 +732,7 @@ async fn generate_port_map(
                 let proxy_port = resource.spec.ports[0].proxy_port;
                 debug!("Found proxy port {} for service port {}", proxy_port, service_port);
                 port_map.insert(service_port, proxy_port);
-            },
+            }
             _ => return Err(add_warning_and_requeue(resource, resource_api, "ReplacedService has multiple ports, while the service itself only has 1 port defined").await)
         }
     }
@@ -881,7 +881,7 @@ async fn change_deployment_scale(
         )
         .await?;
     } else {
-        info!("deployment {name} is not configured with keda it seems");
+        info!("deployment {name} is not configured with keda");
         if let Some(mut deployment) = api.get_opt(name).await? {
             if let Some(ref mut spec) = deployment.spec {
                 spec.replicas = Some(replicas);
@@ -923,6 +923,15 @@ async fn change_keda_replicas(
     });
 
     let patch = Patch::Merge(&scaled_object_patch);
-    api.patch(name, &PatchParams::default(), &patch).await?;
-    Ok(())
+    match api.patch(name, &PatchParams::default(), &patch).await {
+        Ok(_) => Ok(()),
+        Err(kube::Error::Api(api_error)) => {
+            if api_error.code == 404 {
+                Ok(())
+            } else {
+                Err(api_error.into())
+            }
+        }
+        Err(e) => Err(e.into())
+    }
 }
