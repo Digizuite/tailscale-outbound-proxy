@@ -911,28 +911,26 @@ async fn change_keda_replicas(
     debug!("Changing deployment cron-deployment-scale of {name} in {namespace} to {replicas:?}");
     let api: Api<DynamicObject> = Api::namespaced_with(client.clone(), namespace, &api_resource);
 
-    if let Some(_) = api.get_opt(name).await? {
-        let replicas = replicas.map(|r| r.to_string());
+    let replicas = replicas.map(|r| r.to_string());
 
-        let scaled_object_patch = json!({
-            "metadata": {
-                "annotations":
-                    {
-                        "autoscaling.keda.sh/paused-replicas": replicas
-                    }
-            }
-        });
-
-        let patch = Patch::Merge(&scaled_object_patch);
-        match api.patch(name, &PatchParams::default(), &patch).await {
-            Ok(_) => {},
-            Err(kube::Error::Api(api_error)) => {
-                if api_error.code == 404 {
-                    return Ok(())
+    let scaled_object_patch = json!({
+        "metadata": {
+            "annotations":
+                {
+                    "autoscaling.keda.sh/paused-replicas": replicas
                 }
-            }
-            Err(e) => return Err(e.into())
         }
+    });
+
+    let patch = Patch::Merge(&scaled_object_patch);
+    match api.patch(name, &PatchParams::default(), &patch).await {
+        Ok(_) => {},
+        Err(kube::Error::Api(api_error)) => {
+            if api_error.code == 404 {
+                return Ok(())
+            }
+        }
+        Err(e) => return Err(e.into())
     }
     Ok(())
 }
