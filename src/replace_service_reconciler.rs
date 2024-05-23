@@ -924,13 +924,14 @@ async fn change_keda_replicas(
 
     let patch = Patch::Merge(&scaled_object_patch);
     match api.patch(name, &PatchParams::default(), &patch).await {
-        Ok(_) => {},
+        Ok(_) => Ok(()),
         Err(kube::Error::Api(api_error)) => {
             if api_error.code == 404 {
-                return Ok(())
+                Ok(())
+            } else {
+                Err(api_error.into())
             }
         }
-        Err(e) => return Err(e.into())
+        Err(e) => Err(e.into())
     }
-    Ok(())
 }
