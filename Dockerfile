@@ -1,4 +1,4 @@
-FROM rust:1.77 as build
+FROM rust:1.84 as build
 WORKDIR /usr/src
 
 # Install musl-gcc

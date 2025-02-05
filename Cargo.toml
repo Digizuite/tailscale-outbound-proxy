@@ -8,9 +8,9 @@ build = "build.rs"
 
 [dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
-kube = { version = "0.90.0", default-features = false, features = ["client", "rustls-tls", "runtime", "derive"] }
-kube-runtime = {version = "0.90.0", default-features = true, features = ["unstable-runtime-stream-control"] }
-k8s-openapi = { version = "0.21.1", features = ["v1_28"] }
+kube = { version = "0.98.0", default-features = false, features = ["client", "rustls-tls", "runtime", "derive"] }
+kube-runtime = {version = "0.98.0", default-features = true, features = ["unstable-runtime-stream-control"] }
+k8s-openapi = { version = "0.24.0", features = ["v1_30"] }
 serde = "1"
 serde_json = "1.0"
 schemars = "0.8"
@@ -20,10 +20,9 @@ log = "0.4"
 pretty_env_logger = "0.5"
 anyhow = { version = "1.0", features = ["backtrace", "std"] }
 serde_yaml = "0.9"
-reqwest = { version = "0.12.4", default-features = false, features = ["json", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 clap = { version = "4.5", features = ["env", "derive"] }
 oauth2 = "4.4"
-url = "2.5"
 
 [build-dependencies]
 vergen = { version = "8", features = ["build", "git", "gitcl"] }

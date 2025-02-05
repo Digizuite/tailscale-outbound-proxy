@@ -447,10 +447,7 @@ async fn ensure_tailscale_proxy(
                                     name: "TS_AUTHKEY".to_string(),
                                     value_from: Some(EnvVarSource {
                                         secret_key_ref: Some(SecretKeySelector {
-                                            name: Some(
-                                                tailscale_proxy_secret_state_secret_name
-                                                    .to_string(),
-                                            ),
+                                            name: tailscale_proxy_secret_state_secret_name.to_string(),
                                             optional: Some(false),
                                             key: "TS_AUTHKEY".to_string(),
                                         }),
