@@ -5,9 +5,9 @@ home: https://github.com/digizuite/tailscale-outbound-proxy
 keywords:
   - operator
   - tailscale
-kubeVersion: ">= 1.25.0-0"
+kubeVersion: ">= 1.30.0-0"
 name: tailscale-outbound-proxy-operator
 sources:
  - https://github.com/digizuite/tailscale-outbound-proxy
-version: 0.0.7
+version: 0.0.8
 icon: https://github.com/digizuite/tailscale-outbound-proxy/raw/master/tailscale-logo-black.png

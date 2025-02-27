@@ -4,8 +4,8 @@ use crate::{ContextData, Error};
 use anyhow::{anyhow, Result};
 use k8s_openapi::api::apps::v1::{Deployment, DeploymentSpec, DeploymentStrategy, ReplicaSet};
 use k8s_openapi::api::core::v1::{
-    Capabilities, Container, Endpoints, EnvVar, EnvVarSource, Pod, PodSpec, PodTemplateSpec,
-    Secret, SecretKeySelector, SecurityContext, Service, ServicePort, ServiceSpec,
+    Capabilities, Container, Endpoints, EnvVar, EnvVarSource, LocalObjectReference, Pod, PodSpec,
+    PodTemplateSpec, Secret, SecretKeySelector, SecurityContext, Service, ServicePort, ServiceSpec,
 };
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta, OwnerReference};
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
@@ -404,9 +404,20 @@ async fn ensure_tailscale_proxy(
                             ]),
                             ..Default::default()
                         }]),
+                        image_pull_secrets: resource
+                            .spec
+                            .replaced_service_tailscale_image_pull_secret
+                            .clone()
+                            .map(|s| vec![LocalObjectReference { name: s }]),
                         containers: vec![Container {
                             name: "tailscale".to_string(),
-                            image: Some("ghcr.io/digizuite/tailscale-fix:master".to_string()),
+                            image: resource
+                                .spec
+                                .replaced_service_tailscale_image
+                                .clone()
+                                .or_else(|| {
+                                    Some("ghcr.io/digizuite/tailscale-fix:master".to_string())
+                                }),
                             image_pull_policy: Some("Always".to_string()),
                             security_context: Some(SecurityContext {
                                 capabilities: Some(Capabilities {
@@ -447,7 +458,8 @@ async fn ensure_tailscale_proxy(
                                     name: "TS_AUTHKEY".to_string(),
                                     value_from: Some(EnvVarSource {
                                         secret_key_ref: Some(SecretKeySelector {
-                                            name: tailscale_proxy_secret_state_secret_name.to_string(),
+                                            name: tailscale_proxy_secret_state_secret_name
+                                                .to_string(),
                                             optional: Some(false),
                                             key: "TS_AUTHKEY".to_string(),
                                         }),
@@ -929,6 +941,6 @@ async fn change_keda_replicas(
                 Err(api_error.into())
             }
         }
-        Err(e) => Err(e.into())
+        Err(e) => Err(e.into()),
     }
 }
