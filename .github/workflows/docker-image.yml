@@ -10,7 +10,7 @@ on:
       - ".github/workflows/docker-image.yml"
 
 env:
-  REGISTRY: ghcr.io
+  REGISTRY: digizuite.azurecr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
