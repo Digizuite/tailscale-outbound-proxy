@@ -175,10 +175,12 @@ spec:
         app.kubernetes.io/part-of: tailscale-outbound-proxy
     spec:
       serviceAccountName: tailscale-outbound-proxy
+      imagePullSecrets:
+        - name: {{ .Values.operator.imagePullSecret }}
       containers:
         - name: operator
-          image: ghcr.io/digizuite/tailscale-outbound-proxy:master
-          imagePullPolicy: Always
+          image: {{ .Values.operator.image }}
+          imagePullPolicy: {{ .Values.operator.imagePullPolicy }}
           env:
             - name: RUST_LOG
               value: "info"

@@ -51,6 +51,14 @@ pub struct ReplacedServiceSpec {
 
     /// The name of a keda scaled object that might prevent downscaling of a deployment
     pub keda_scale_object_name: Option<String>,
+
+    /// A custom image to use for the tailscale proxy
+    pub replaced_service_tailscale_image: Option<String>,
+
+    /// A pull secret to use for the custom image. Do note proxies are started in the same
+    /// namespace as this CRD instance, meaning the pull secret should be in the same
+    /// namespace as this CRD instance.
+    pub replaced_service_tailscale_image_pull_secret: Option<String>
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, JsonSchema, Default)]

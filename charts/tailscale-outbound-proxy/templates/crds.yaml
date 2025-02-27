@@ -74,6 +74,14 @@ spec:
               proxyStateSecretName:
                 description: The secret to use for storing tailscales state. You do not have to create this secret yourself.
                 type: string
+              replacedServiceTailscaleImage:
+                description: A custom image to use for the tailscale proxy
+                nullable: true
+                type: string
+              replacedServiceTailscaleImagePullSecret:
+                description: A pull secret to use for the custom image. Do note proxies are started in the same namespace as this CRD instance, meaning the pull secret should be in the same namespace as this CRD instance.
+                nullable: true
+                type: string
               serviceAccount:
                 description: The service account the proxy pod should use.
                 type: string

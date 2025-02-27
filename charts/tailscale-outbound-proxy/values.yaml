@@ -1,5 +1,8 @@
 operator:
   enable: true
+  imagePullPolicy: Always
+  image: digizuite.azurecr.io/digizuite/tailscale-outbound-proxy:master
+  imagePullSecret: ""
   resources:
     limits:
       cpu: 100m
